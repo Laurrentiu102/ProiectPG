@@ -18,7 +18,7 @@ namespace gps {
         void move(MOVE_DIRECTION direction);
         void rotate(float pitch, float yaw);
 
-    private:
+    public:
         glm::vec3 cameraPosition;
         glm::vec3 cameraTarget;
         glm::vec3 cameraFrontDirection;
@@ -28,7 +28,7 @@ namespace gps {
         glm::vec3 originalCameraUpDirection;
         glm::vec3 originalCameraFrontDirection;
 
-        float speed = 0.07f;
+        float speed = 0.03f;
     };
 
 }
