@@ -12,6 +12,61 @@ map_Kd Col_1_tree_1.png
 map_d Col_1_tree_1_Opacity.png
 map_Bump Col_1_tree_1_Normal.png -bm 1
 
+newmtl Bark_1_Mat.002
+Ns 128.000031
+Ka 1.000000 1.000000 1.000000
+Ks 1.000000 1.000000 1.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+illum 2
+map_Kd Col_1_tree_2.png
+map_d Col_1_tree_2_Opacity.png
+map_Bump Col_1_tree_2_Normal.png -bm 1
+
+newmtl Bark_1_Mat.003
+Ns 128.000031
+Ka 1.000000 1.000000 1.000000
+Ks 1.000000 1.000000 1.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+illum 2
+map_Kd Col_1_tree_3.png
+map_d Col_1_tree_3_Opacity.png
+map_Bump Col_1_tree_3_Normal.png -bm 1
+
+newmtl Bark_1_Mat.004
+Ns 128.000031
+Ka 1.000000 1.000000 1.000000
+Ks 1.000000 1.000000 1.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+illum 2
+map_Kd Col_1_tree_4.png
+map_d Col_1_tree_4_Opacity.png
+map_Bump Col_1_tree_4_Normal.png -bm 1
+
+newmtl Bark_1_Mat.005
+Ns 128.000031
+Ka 1.000000 1.000000 1.000000
+Ks 1.000000 1.000000 1.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+illum 2
+map_Kd Col_1_tree_5.png
+map_d Col_1_tree_5_Opacity.png
+map_Bump Col_1_tree_5_Normal.png -bm 1
+
+newmtl Bark_1_Mat.006
+Ns 128.000031
+Ka 1.000000 1.000000 1.000000
+Ks 1.000000 1.000000 1.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+illum 2
+map_Kd Col_1_tree_6.png
+map_d Col_1_tree_6_Opacity.png
+map_Bump Col_1_tree_6_Normal.png -bm 1
+
 newmtl Leaf_1_Mat
 Ns 128.000031
 Ka 1.000000 1.000000 1.000000
@@ -22,6 +77,61 @@ illum 2
 map_Kd Col_1_tree_1.png
 map_d Col_1_tree_1_Opacity.png
 map_Bump Col_1_tree_1_Normal.png -bm 1
+
+newmtl Leaf_1_Mat.002
+Ns 128.000031
+Ka 1.000000 1.000000 1.000000
+Ks 1.000000 1.000000 1.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+illum 2
+map_Kd Col_1_tree_2.png
+map_d Col_1_tree_2_Opacity.png
+map_Bump Col_1_tree_2_Normal.png -bm 1
+
+newmtl Leaf_1_Mat.003
+Ns 128.000031
+Ka 1.000000 1.000000 1.000000
+Ks 1.000000 1.000000 1.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+illum 2
+map_Kd Col_1_tree_3.png
+map_d Col_1_tree_3_Opacity.png
+map_Bump Col_1_tree_3_Normal.png -bm 1
+
+newmtl Leaf_1_Mat.004
+Ns 128.000031
+Ka 1.000000 1.000000 1.000000
+Ks 1.000000 1.000000 1.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+illum 2
+map_Kd Col_1_tree_4.png
+map_d Col_1_tree_4_Opacity.png
+map_Bump Col_1_tree_4_Normal.png -bm 1
+
+newmtl Leaf_1_Mat.005
+Ns 128.000031
+Ka 1.000000 1.000000 1.000000
+Ks 1.000000 1.000000 1.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+illum 2
+map_Kd Col_1_tree_5.png
+map_d Col_1_tree_5_Opacity.png
+map_Bump Col_1_tree_5_Normal.png -bm 1
+
+newmtl Leaf_1_Mat.006
+Ns 128.000031
+Ka 1.000000 1.000000 1.000000
+Ks 1.000000 1.000000 1.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+illum 2
+map_Kd Col_1_tree_6.png
+map_d Col_1_tree_6_Opacity.png
+map_Bump Col_1_tree_6_Normal.png -bm 1
 
 newmtl Leaf_2_Mat
 Ns 128.000031
@@ -34,6 +144,61 @@ map_Kd Col_1_tree_1.png
 map_d Col_1_tree_1_Opacity.png
 map_Bump Col_1_tree_1_Normal.png -bm 1
 
+newmtl Leaf_2_Mat.002
+Ns 128.000031
+Ka 1.000000 1.000000 1.000000
+Ks 1.000000 1.000000 1.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+illum 2
+map_Kd Col_1_tree_2.png
+map_d Col_1_tree_2_Opacity.png
+map_Bump Col_1_tree_2_Normal.png -bm 1
+
+newmtl Leaf_2_Mat.003
+Ns 128.000031
+Ka 1.000000 1.000000 1.000000
+Ks 1.000000 1.000000 1.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+illum 2
+map_Kd Col_1_tree_3.png
+map_d Col_1_tree_3_Opacity.png
+map_Bump Col_1_tree_3_Normal.png -bm 1
+
+newmtl Leaf_2_Mat.004
+Ns 128.000031
+Ka 1.000000 1.000000 1.000000
+Ks 1.000000 1.000000 1.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+illum 2
+map_Kd Col_1_tree_4.png
+map_d Col_1_tree_4_Opacity.png
+map_Bump Col_1_tree_4_Normal.png -bm 1
+
+newmtl Leaf_2_Mat.005
+Ns 128.000031
+Ka 1.000000 1.000000 1.000000
+Ks 1.000000 1.000000 1.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+illum 2
+map_Kd Col_1_tree_5.png
+map_d Col_1_tree_5_Opacity.png
+map_Bump Col_1_tree_5_Normal.png -bm 1
+
+newmtl Leaf_2_Mat.006
+Ns 128.000031
+Ka 1.000000 1.000000 1.000000
+Ks 1.000000 1.000000 1.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+illum 2
+map_Kd Col_1_tree_6.png
+map_d Col_1_tree_6_Opacity.png
+map_Bump Col_1_tree_6_Normal.png -bm 1
+
 newmtl Leaf_3_Mat
 Ns 128.000031
 Ka 1.000000 1.000000 1.000000
@@ -44,6 +209,61 @@ illum 2
 map_Kd Col_1_tree_1.png
 map_d Col_1_tree_1_Opacity.png
 map_Bump Col_1_tree_1_Normal.png -bm 1
+
+newmtl Leaf_3_Mat.002
+Ns 128.000031
+Ka 1.000000 1.000000 1.000000
+Ks 1.000000 1.000000 1.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+illum 2
+map_Kd Col_1_tree_2.png
+map_d Col_1_tree_2_Opacity.png
+map_Bump Col_1_tree_2_Normal.png -bm 1
+
+newmtl Leaf_3_Mat.003
+Ns 128.000031
+Ka 1.000000 1.000000 1.000000
+Ks 1.000000 1.000000 1.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+illum 2
+map_Kd Col_1_tree_3.png
+map_d Col_1_tree_3_Opacity.png
+map_Bump Col_1_tree_3_Normal.png -bm 1
+
+newmtl Leaf_3_Mat.004
+Ns 128.000031
+Ka 1.000000 1.000000 1.000000
+Ks 1.000000 1.000000 1.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+illum 2
+map_Kd Col_1_tree_4.png
+map_d Col_1_tree_4_Opacity.png
+map_Bump Col_1_tree_4_Normal.png -bm 1
+
+newmtl Leaf_3_Mat.005
+Ns 128.000031
+Ka 1.000000 1.000000 1.000000
+Ks 1.000000 1.000000 1.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+illum 2
+map_Kd Col_1_tree_5.png
+map_d Col_1_tree_5_Opacity.png
+map_Bump Col_1_tree_5_Normal.png -bm 1
+
+newmtl Leaf_3_Mat.006
+Ns 128.000031
+Ka 1.000000 1.000000 1.000000
+Ks 1.000000 1.000000 1.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+illum 2
+map_Kd Col_1_tree_6.png
+map_d Col_1_tree_6_Opacity.png
+map_Bump Col_1_tree_6_Normal.png -bm 1
 
 newmtl Material.011
 Ns 250.000000
@@ -64,3 +284,53 @@ Ni 1.450000
 d 1.000000
 illum 2
 map_Kd dirt.png
+
+newmtl kowalski
+Ns 0.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 1
+map_Kd kowalski.png
+
+newmtl mat0
+Ns 0.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 1
+map_Kd tex_0029_0out.png
+
+newmtl private
+Ns 0.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 1
+map_Kd private.png
+
+newmtl rico
+Ns 0.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 1
+map_Kd rico.png
+
+newmtl skipper
+Ns 0.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 1
+map_Kd skipper.png

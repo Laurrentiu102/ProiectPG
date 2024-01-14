@@ -1,0 +1,23 @@
+# Blender 4.0.2 MTL File: 'scene.blend'
+# www.blender.org
+
+newmtl base
+Ns 96.078453
+Ka 0.300000 0.300000 0.300000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 3
+map_Kd piper_diffuse.jpg
+map_Bump piper_bump.jpg
+
+newmtl prop
+Ns 96.078453
+Ka 0.100000 0.100000 0.100000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 3
+map_Kd piper_diffuse.jpg

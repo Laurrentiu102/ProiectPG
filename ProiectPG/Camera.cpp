@@ -8,7 +8,7 @@ namespace gps {
         this->cameraUpDirection = cameraUp;
 
         this->cameraFrontDirection = glm::normalize(glm::vec3(cameraTarget - cameraPosition));
-        this->cameraRightDirection = glm::normalize(glm::cross(this->cameraFrontDirection, cameraUp));
+        this->cameraRightDirection = glm::normalize(glm::cross(cameraFrontDirection, cameraUp));
 
         this->originalCameraUpDirection = cameraUp;
         this->originalCameraFrontDirection = this->cameraFrontDirection;
@@ -53,5 +53,32 @@ namespace gps {
         cameraRightDirection = glm::normalize(glm::cross(cameraFrontDirection, originalCameraUpDirection));
         cameraUpDirection = glm::cross(cameraRightDirection, cameraFrontDirection);
         cameraTarget = cameraPosition + cameraFrontDirection;
+    }
+
+    void Camera::clampAngle(float& angle, float lower, float upper)
+    {
+        angle > upper ? angle = upper : angle;
+        angle < lower ? angle = lower : angle;
+    }
+    void Camera::mouseCallback(double xpos, double ypos)
+    {
+        if (firstTimeInFrame)
+        {
+            lastX = (float)xpos;
+            lastY = (float)ypos;
+            firstTimeInFrame = false;
+        }
+        float deltaX = (float)xpos - lastX;
+        float deltaY = (float)ypos - lastY;
+
+        lastX = (float)xpos;
+        lastY = (float)ypos;
+
+        yaw -= deltaX * sensitivity;
+        pitch -= deltaY * sensitivity;
+
+        clampAngle(pitch, -70.0f, 89.0f);
+
+        rotate(pitch, yaw);
     }
 }

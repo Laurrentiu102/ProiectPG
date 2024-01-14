@@ -33,9 +33,9 @@ int glWindowHeight = 600;
 int retina_width, retina_height;
 GLFWwindow* glWindow = NULL;
 
-const unsigned int SHADOW_WIDTH = 8192;
-const unsigned int SHADOW_HEIGHT = 8192;
-const GLfloat near_plane = 0.1f, far_plane = 100.0f;
+const unsigned int SHADOW_WIDTH = 16384;
+const unsigned int SHADOW_HEIGHT = 16384;
+const GLfloat near_plane = 1.0f, far_plane = 100.0f;
 
 glm::mat4 model;
 GLuint modelLoc;
@@ -51,6 +51,25 @@ glm::vec3 lightDir;
 GLuint lightDirLoc;
 glm::vec3 lightColor;
 GLuint lightColorLoc;
+glm::vec3 lightPointPos1;
+GLuint lightPointPos1Loc;
+glm::vec3 lightPointColor1;
+GLuint lightPointColor1Loc;
+glm::vec3 lightPointPos2;
+GLuint lightPointPos2Loc;
+glm::vec3 lightPointColor2;
+GLuint lightPointColor2Loc;
+glm::vec3 lightPointPos3;
+GLuint lightPointPos3Loc;
+glm::vec3 lightPointPos4;
+GLuint lightPointPos4Loc;
+glm::vec3 lightPointColor3;
+GLuint lightPointColor3Loc;
+glm::vec3 lightPointColor4;
+GLuint lightPointColor4Loc;
+GLuint projectileSpawnedLoc;
+bool lightMode;
+GLuint lightModeLoc;
 
 gps::Camera myCamera(
 				glm::vec3(0.0f, 2.0f, 5.5f), 
@@ -59,20 +78,46 @@ gps::Camera myCamera(
 float cameraSpeed = 0.01f;
 
 bool pressedKeys[1024];
-float angleY = 0.0f;
 GLfloat lightAngle;
 
 gps::Model3D nanosuit;
 gps::Model3D lightCube;
 gps::Model3D screenQuad;
+gps::Model3D toothless;
+
+gps::Model3D airplaneBody;
+gps::Model3D airplaneSaw;
+float sawAngle = 0;
+float planeRotation = 0;
 
 gps::Model3D scene;
-glm::mat4 sceneRotation;
+glm::mat4 sceneModel;
 float sceneRotationAngle = 0.0f;
 
+gps::Model3D scene2;
+glm::mat4 sceneModel2 = glm::mat4(1.0f);
+float sceneRotationAngle2 = 0.0f;
+
+gps::Model3D scene3;
+glm::mat4 sceneModel3 = glm::mat4(1.0f);
+float sceneRotationAngle3 = 0.0f;
+
+gps::Model3D scene4;
+glm::mat4 sceneModel4 = glm::mat4(1.0f);
+float sceneRotationAngle4 = 0.0f;
+
+gps::Model3D fireball;
+glm::vec3 projectileDir;
+glm::vec3 projectilePos;
+float projectileSpeed = 0.25f;
+bool projectileSpawned = false;
+bool shootForPlane = false;
+float lastDistance = 0.0f;
+
+bool stopSceneRotation = true;
 
 gps::Model3D maurice;
-glm::mat4 mauricePosition;
+glm::mat4 mauriceModel;
 bool mauriceFollowToggeled = true;
 
 gps::Shader myCustomShader;
@@ -98,41 +143,6 @@ void updateDelta(double elapsedSeconds) {
 }
 double lastTimeStamp = glfwGetTime();
 
-float lastX = 0, lastY = 0;
-float deltaX;
-float deltaY;
-float pitch;
-float yaw;
-bool firstTimeInFrame = true;
-float sensitivity = 0.05f;
-
-void clampAngle(float& angle, float lower, float upper)
-{
-	angle > upper ? angle = upper : angle;
-	angle < lower ? angle = lower : angle;
-}
-
-static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
-{
-	if (firstTimeInFrame)
-	{
-		lastX = (float)xpos;
-		lastY = (float)ypos;
-		firstTimeInFrame = false;
-	}
-	deltaX = (float)xpos - lastX;
-	deltaY = (float)ypos - lastY;
-
-	lastX = (float)xpos;
-	lastY = (float)ypos;
-
-	yaw -= deltaX * sensitivity;
-	pitch -= deltaY * sensitivity;
-
-	clampAngle(pitch, -70.0f, 89.0f);
-
-	myCamera.rotate(pitch, yaw);
-}
 
 GLenum glCheckError_(const char *file, int line) {
 	GLenum errorCode;
@@ -155,6 +165,17 @@ GLenum glCheckError_(const char *file, int line) {
 
 void windowResizeCallback(GLFWwindow* window, int width, int height) {
 	fprintf(stdout, "window resized to width: %d , and height: %d\n", width, height);
+
+	glfwGetFramebufferSize(window, &retina_width, &retina_height);
+
+	myCustomShader.useShaderProgram();
+
+	glViewport(0, 0, retina_width, retina_height);
+
+	projection = glm::perspective(glm::radians(45.0f), (float)retina_width / (float)retina_height, 0.1f, 1000.0f);
+	projectionLoc = glGetUniformLocation(myCustomShader.shaderProgram, "projection");
+
+	glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
 }
 
 void keyboardCallback(GLFWwindow* window, int key, int scancode, int action, int mode) {
@@ -166,6 +187,44 @@ void keyboardCallback(GLFWwindow* window, int key, int scancode, int action, int
 
 	if (key == GLFW_KEY_1 && action == GLFW_PRESS) {
 		mauriceFollowToggeled = !mauriceFollowToggeled;
+	}
+
+	if (key == GLFW_KEY_2 && action == GLFW_PRESS) {
+		stopSceneRotation = !stopSceneRotation;
+	}
+
+	if (key == GLFW_KEY_3 && action == GLFW_PRESS) {
+		lightMode = !lightMode;
+		myCustomShader.useShaderProgram();
+		glUniform1i(lightModeLoc, lightMode ? 1 : 0);
+	}
+	
+	if (key == GLFW_KEY_4 && action == GLFW_PRESS) {
+		if (!projectileSpawned)
+		{
+			sceneModel4 = glm::rotate(glm::mat4(1.0f), glm::radians(sceneRotationAngle4), glm::vec3(0.0f, 1.0f, 0.0f));
+			projectilePos = glm::mat3(sceneModel4) * lightPointPos3;
+
+			projectileDir = glm::normalize(glm::vec3(-1.12162f, 9.36581f, -0.770288f) - projectilePos);
+			lastDistance = glm::length(glm::vec3(-1.12162f, 9.36581f, -0.770288f) - projectilePos);
+			projectileSpawned = true;
+		}
+	}
+
+	if (key == GLFW_KEY_5 && action == GLFW_PRESS) {
+		if (!projectileSpawned)
+		{
+			model = glm::rotate(glm::mat4(1.0f), glm::radians(planeRotation), glm::vec3(0.0f, 1.0f, 0.0f));
+			glm::vec3 planePosition = glm::mat3(model) * glm::vec3(-78.3925f, 21.1351f, 3.2545f);
+
+			sceneModel4 = glm::rotate(glm::mat4(1.0f), glm::radians(sceneRotationAngle4), glm::vec3(0.0f, 1.0f, 0.0f));
+			projectilePos = glm::mat3(sceneModel4) * lightPointPos3;
+
+			projectileDir = glm::normalize(glm::vec3(planePosition - projectilePos));
+			lastDistance = glm::length(planePosition - projectilePos);
+			shootForPlane = true;
+			projectileSpawned = true;
+		}
 	}
 
 	if (key == GLFW_KEY_E && action == GLFW_PRESS) {
@@ -197,7 +256,7 @@ void keyboardCallback(GLFWwindow* window, int key, int scancode, int action, int
 }
 
 void mouseCallback(GLFWwindow* window, double xpos, double ypos) {
-
+	myCamera.mouseCallback(xpos, ypos);
 }
 
 void processSceneMovement()
@@ -206,19 +265,20 @@ void processSceneMovement()
 	updateDelta(currentTimeStamp - lastTimeStamp);
 	lastTimeStamp = currentTimeStamp;
 
-	sceneRotationAngle += delta;
+	if (!stopSceneRotation)
+	{
+		sceneRotationAngle += delta;
+		sceneRotationAngle2 += delta;
+		sceneRotationAngle3 -= delta;
+		sceneRotationAngle4 -= 2*delta;
+	}
+
+	sawAngle += 1000*delta;
+	planeRotation += delta;
 }
 
 void processMovement()
 {
-	if (pressedKeys[GLFW_KEY_Q]) {
-		angleY -= 1.0f;
-	}
-
-	if (pressedKeys[GLFW_KEY_E]) {
-		angleY += 1.0f;		
-	}
-
 	if (pressedKeys[GLFW_KEY_J]) {
 		lightAngle -= 1.0f;
 	}
@@ -296,14 +356,11 @@ bool initOpenGLWindow()
 	glfwSetWindowSizeCallback(glWindow, windowResizeCallback);
 	glfwSetKeyCallback(glWindow, keyboardCallback);
 	glfwSetCursorPosCallback(glWindow, mouseCallback);
-	//glfwSetInputMode(glWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	glfwSetInputMode(glWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	glfwMakeContextCurrent(glWindow);
 
 	glfwSwapInterval(1);
-
-	glfwSetCursorPosCallback(glWindow, cursor_position_callback);
-	glfwSetInputMode(glWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 
 #if not defined (__APPLE__)
@@ -344,23 +401,69 @@ void initObjects() {
 	screenQuad.LoadModel("objects/quad/quad.obj");
 	scene.LoadModel("objects/scene/scene.obj");
 	maurice.LoadModel("objects/maurice/maurice.obj");
+	toothless.LoadModel("objects/toothless/toothless.obj");
+	airplaneBody.LoadModel("objects/airplane/airplane_body.obj");
+	airplaneSaw.LoadModel("objects/airplane/airplane_saw.obj");
+	scene2.LoadModel("objects/scene2/scene.obj");
+	scene3.LoadModel("objects/scene3/scene3.obj");
+	scene4.LoadModel("objects/scene5/scene5.obj");
+	fireball.LoadModel("objects/fireball/fireball.obj");
 }
 
 void initShaders() {
 	myCustomShader.loadShader("shaders/shaderStart.vert", "shaders/shaderStart.frag");
 	myCustomShader.useShaderProgram();
-	lightShader.loadShader("shaders/lightCube.vert", "shaders/lightCube.frag");
-	lightShader.useShaderProgram();
 	screenQuadShader.loadShader("shaders/screenQuad.vert", "shaders/screenQuad.frag");
 	screenQuadShader.useShaderProgram();
 	depthMapShader.loadShader("shaders/depthMap.vert", "shaders/depthMap.frag");
 	depthMapShader.useShaderProgram();
 	skyboxShader.loadShader("shaders/skyboxShader.vert", "shaders/skyboxShader.frag");
 	skyboxShader.useShaderProgram();
+	lightShader.loadShader("shaders/lightCube.vert", "shaders/lightCube.frag");
+	lightShader.useShaderProgram();
 }
 
 void initUniforms() {
 	myCustomShader.useShaderProgram();
+
+	lightMode = true;
+	lightModeLoc = glGetUniformLocation(myCustomShader.shaderProgram, "lightMode");
+	glUniform1i(lightModeLoc, 1);
+
+	projectileSpawnedLoc = glGetUniformLocation(myCustomShader.shaderProgram, "projectileSpawned");
+	glUniform1i(projectileSpawnedLoc, 0);
+
+	lightPointPos1 = glm::vec3(-20.8484f, 9.07315f, -2.775f);
+	lightPointPos1Loc = glGetUniformLocation(myCustomShader.shaderProgram, "lightPointPosEye1");
+	glUniform3fv(lightPointPos1Loc, 1, glm::value_ptr(lightPointPos1));
+
+	lightPointColor1 = glm::vec3(0.98f, 0.49f, 0.04f);
+	lightPointColor1Loc = glGetUniformLocation(myCustomShader.shaderProgram, "lightPointColor1");
+	glUniform3fv(lightPointColor1Loc, 1, glm::value_ptr(lightPointColor1));
+
+	lightPointPos2 = glm::vec3(-0.13771f, -0.410187f, -12.7916f);
+	lightPointPos2Loc = glGetUniformLocation(myCustomShader.shaderProgram, "lightPointPosEye2");
+	glUniform3fv(lightPointPos2Loc, 1, glm::value_ptr(lightPointPos2));
+
+	lightPointColor2 = glm::vec3(0.3f, 0.6f, 0.8f);
+	lightPointColor2Loc = glGetUniformLocation(myCustomShader.shaderProgram, "lightPointColor2");
+	glUniform3fv(lightPointColor2Loc, 1, glm::value_ptr(lightPointColor2));
+
+	lightPointPos3 = glm::vec3(-4.98285f, 18.4609f, 20.1801f);
+	lightPointPos3Loc = glGetUniformLocation(myCustomShader.shaderProgram, "lightPointPosEye3");
+	glUniform3fv(lightPointPos3Loc, 1, glm::value_ptr(lightPointPos3));
+
+	lightPointColor3 = glm::vec3(0.8f, 0.18f, 0.05f);
+	lightPointColor3Loc = glGetUniformLocation(myCustomShader.shaderProgram, "lightPointColor3");
+	glUniform3fv(lightPointColor3Loc, 1, glm::value_ptr(lightPointColor3));
+
+	lightPointPos4 = glm::vec3(-4.98285f, 18.4609f, 20.1801f);
+	lightPointPos4Loc = glGetUniformLocation(myCustomShader.shaderProgram, "lightPointPosEye4");
+	glUniform3fv(lightPointPos4Loc, 1, glm::value_ptr(lightPointPos4));
+
+	lightPointColor4 = glm::vec3(0.8f, 0.18f, 0.05f);
+	lightPointColor4Loc = glGetUniformLocation(myCustomShader.shaderProgram, "lightPointColor4");
+	glUniform3fv(lightPointColor4Loc, 1, glm::value_ptr(lightPointColor4));
 
 	model = glm::mat4(1.0f);
 	modelLoc = glGetUniformLocation(myCustomShader.shaderProgram, "model");
@@ -385,12 +488,14 @@ void initUniforms() {
 	glUniform3fv(lightDirLoc, 1, glm::value_ptr(glm::inverseTranspose(glm::mat3(view * lightRotation)) * lightDir));
 
 	//set light color
-	lightColor = glm::vec3(1.0f, 1.0f, 1.0f); //white light
+	lightColor = glm::vec3(0.79f, 0.59f, 0.54f); //white light
 	lightColorLoc = glGetUniformLocation(myCustomShader.shaderProgram, "lightColor");
 	glUniform3fv(lightColorLoc, 1, glm::value_ptr(lightColor));
 
 	lightShader.useShaderProgram();
 	glUniformMatrix4fv(glGetUniformLocation(lightShader.shaderProgram, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+
+	glCheckError();
 }
 
 void initFBO() {
@@ -416,8 +521,8 @@ void initFBO() {
 }
 
 glm::mat4 computeLightSpaceTrMatrix() {
-	glm::mat4 lightView = glm::lookAt(glm::mat3(lightRotation) * lightDir, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-	glm::mat4 lightProjection = glm::ortho(-20.0f, 20.0f, -20.0f, 20.0f, near_plane, far_plane);
+	glm::mat4 lightView = glm::lookAt(glm::mat3(lightRotation) * lightDir * 5.0f, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	glm::mat4 lightProjection = glm::ortho(-80.0f, 80.0f, -80.0f, 80.0f, near_plane, far_plane);
 	glm::mat4 lightSpaceTrMatrix = lightProjection * lightView;
 	return lightSpaceTrMatrix;
 }
@@ -425,54 +530,256 @@ glm::mat4 computeLightSpaceTrMatrix() {
 void drawObjects(gps::Shader shader, bool depthPass) {
 		
 	shader.useShaderProgram();
-	
-	model = glm::rotate(glm::mat4(1.0f), glm::radians(angleY), glm::vec3(0.0f, 1.0f, 0.0f));
-	glUniformMatrix4fv(glGetUniformLocation(shader.shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
 
-	// do not send the normal matrix if we are rendering in the depth map
-	if (!depthPass) {
-		normalMatrix = glm::mat3(glm::inverseTranspose(view * model));
-		glUniformMatrix3fv(normalMatrixLoc, 1, GL_FALSE, glm::value_ptr(normalMatrix));
-	}
-
-	//nanosuit.Draw(shader);
-
-	model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.0f, 0.0f));
-	model = glm::scale(model, glm::vec3(0.5f));
-	glUniformMatrix4fv(glGetUniformLocation(shader.shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
-
-	// do not send the normal matrix if we are rendering in the depth map
-	if (!depthPass) {
-		normalMatrix = glm::mat3(glm::inverseTranspose(view * model));
-		glUniformMatrix3fv(normalMatrixLoc, 1, GL_FALSE, glm::value_ptr(normalMatrix));
-	}
-
-	model = glm::mat4(1.0f);
-	model = glm::rotate(model, glm::radians(sceneRotationAngle), glm::vec3(0.0f, 1.0f, 0.0f));
-	model = glm::translate(model, glm::vec3(10.0f, 10.0f, 0.0f));
-	glUniformMatrix4fv(glGetUniformLocation(shader.shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
-
-	scene.Draw(shader);
-
-	if (mauriceFollowToggeled)
+	if (lightMode)
 	{
-		mauricePosition = glm::translate(glm::mat4(1.0f), myCamera.cameraPosition - 0.3f * myCamera.cameraFrontDirection -glm::vec3(0.0f,0.175f,0.0f));
-		mauricePosition = glm::rotate(mauricePosition, glm::radians(180.0f + yaw), glm::vec3(0.0f, 1.0f, 0.0f));
-		mauricePosition = glm::rotate(mauricePosition, glm::radians(-pitch), glm::vec3(1.0f, 0.0f, 0.0f));
-	}
-	glUniformMatrix4fv(glGetUniformLocation(shader.shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(mauricePosition));
+		model = glm::mat4(1.0f);
+		glUniformMatrix4fv(glGetUniformLocation(shader.shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
 
-	// do not send the normal matrix if we are rendering in the depth map
-	if (!depthPass) {
-		normalMatrix = glm::mat3(glm::inverseTranspose(view * model));
-		glUniformMatrix3fv(normalMatrixLoc, 1, GL_FALSE, glm::value_ptr(normalMatrix));
+		if (!depthPass) {
+			normalMatrix = glm::mat3(glm::inverseTranspose(view * model));
+			glUniformMatrix3fv(glGetUniformLocation(shader.shaderProgram, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(normalMatrix));
+		}
+
+		scene.Draw(shader);
+
+		if (mauriceFollowToggeled)
+		{
+			mauriceModel = glm::translate(glm::mat4(1.0f), myCamera.cameraPosition - 0.3f * myCamera.cameraFrontDirection - glm::vec3(0.0f, 0.175f, 0.0f));
+			mauriceModel = glm::rotate(mauriceModel, glm::radians(180.0f + myCamera.yaw), glm::vec3(0.0f, 1.0f, 0.0f));
+			mauriceModel = glm::rotate(mauriceModel, glm::radians(-myCamera.pitch), glm::vec3(1.0f, 0.0f, 0.0f));
+		}
+		glUniformMatrix4fv(glGetUniformLocation(shader.shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(mauriceModel));
+
+		// do not send the normal matrix if we are rendering in the depth map
+		if (!depthPass) {
+			normalMatrix = glm::mat3(glm::inverseTranspose(view * model));
+			glUniformMatrix3fv(glGetUniformLocation(shader.shaderProgram, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(normalMatrix));
+		}
+
+		maurice.Draw(shader);
+
+		model = glm::rotate(glm::mat4(1.0f), glm::radians(planeRotation), glm::vec3(0.0f, 1.0f, 0.0f));
+		model = glm::translate(model, glm::vec3(-78.3925f, 21.1351f, 3.2545f));
+		model = glm::rotate(model, glm::radians(sawAngle), glm::vec3(0.0f, 0.0f, 1.0f));
+		model = glm::translate(model, glm::vec3(78.3925f, -21.1351f, -3.2545f));
+
+		glUniformMatrix4fv(glGetUniformLocation(shader.shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
+
+		if (!depthPass) {
+			normalMatrix = glm::mat3(glm::inverseTranspose(view * model));
+			glUniformMatrix3fv(glGetUniformLocation(shader.shaderProgram, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(normalMatrix));
+		}
+
+		airplaneSaw.Draw(shader);
+
+		model = glm::rotate(glm::mat4(1.0f), glm::radians(planeRotation), glm::vec3(0.0f, 1.0f, 0.0f));
+		glUniformMatrix4fv(glGetUniformLocation(shader.shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
+
+		if (!depthPass) {
+			normalMatrix = glm::mat3(glm::inverseTranspose(view * model));
+			glUniformMatrix3fv(glGetUniformLocation(shader.shaderProgram, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(normalMatrix));
+		}
+		airplaneBody.Draw(shader);
+
+		sceneModel2 = glm::rotate(glm::mat4(1.0f), glm::radians(sceneRotationAngle2), glm::vec3(0.0f, 1.0f, 0.0f));
+		glm::vec3 lightPointPos1Aux = glm::mat3(sceneModel2) * lightPointPos1;
+		model = sceneModel2;
+		glUniform3fv(glGetUniformLocation(shader.shaderProgram, "lightPointPosEye1"), 1, glm::value_ptr(lightPointPos1Aux));
+		glUniformMatrix4fv(glGetUniformLocation(shader.shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(sceneModel2));
+
+		if (!depthPass) {
+			normalMatrix = glm::mat3(glm::inverseTranspose(view * model));
+			glUniformMatrix3fv(glGetUniformLocation(shader.shaderProgram, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(normalMatrix));
+		}
+
+		scene2.Draw(shader);
+
+		sceneModel3 = glm::rotate(glm::mat4(1.0f), glm::radians(sceneRotationAngle3), glm::vec3(0.0f, 1.0f, 0.0f));
+		glm::vec3 lightPointPos2Aux = glm::mat3(sceneModel3) * lightPointPos2;
+		model = sceneModel3;
+		glUniform3fv(glGetUniformLocation(shader.shaderProgram, "lightPointPosEye2"), 1, glm::value_ptr(lightPointPos2Aux));
+		glUniformMatrix4fv(glGetUniformLocation(shader.shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(sceneModel3));
+
+		if (!depthPass) {
+			normalMatrix = glm::mat3(glm::inverseTranspose(view * model));
+			glUniformMatrix3fv(glGetUniformLocation(shader.shaderProgram, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(normalMatrix));
+		}
+
+		scene3.Draw(shader);
+
+		sceneModel4 = glm::rotate(glm::mat4(1.0f), glm::radians(sceneRotationAngle4), glm::vec3(0.0f, 1.0f, 0.0f));
+		glm::vec3 lightPointPos3Aux = glm::mat3(sceneModel4) * lightPointPos3;
+		model = sceneModel4;
+		glUniform3fv(glGetUniformLocation(shader.shaderProgram, "lightPointPosEye3"), 1, glm::value_ptr(lightPointPos3Aux));
+		glUniformMatrix4fv(glGetUniformLocation(shader.shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
+
+		scene4.Draw(shader);
+
+		if (projectileSpawned)
+		{
+			glUniform1i(glGetUniformLocation(shader.shaderProgram, "projectileSpawned"), projectileSpawned);
+			glUniform3fv(glGetUniformLocation(shader.shaderProgram, "lightPointPosEye4"), 1, glm::value_ptr(projectilePos));
+			model = glm::translate(glm::mat4(1.0f), projectilePos);
+			glUniformMatrix4fv(glGetUniformLocation(shader.shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
+
+			if (!depthPass) {
+				normalMatrix = glm::mat3(glm::inverseTranspose(view * model));
+				glUniformMatrix3fv(glGetUniformLocation(shader.shaderProgram, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(normalMatrix));
+			}
+
+			fireball.Draw(shader);
+		}
+		else
+		{
+			glUniform1i(glGetUniformLocation(shader.shaderProgram, "projectileSpawned"), 0);
+		}
+	}
+	else
+	{
+		model = glm::mat4(1.0f);
+		glUniformMatrix4fv(glGetUniformLocation(shader.shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
+
+		if (!depthPass) {
+			normalMatrix = glm::mat3(glm::inverseTranspose(view * model));
+			glUniformMatrix3fv(glGetUniformLocation(shader.shaderProgram, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(normalMatrix));
+		}
+
+		scene.Draw(shader);
+
+		if (mauriceFollowToggeled)
+		{
+			mauriceModel = glm::translate(glm::mat4(1.0f), myCamera.cameraPosition - 0.3f * myCamera.cameraFrontDirection - glm::vec3(0.0f, 0.175f, 0.0f));
+			mauriceModel = glm::rotate(mauriceModel, glm::radians(180.0f + myCamera.yaw), glm::vec3(0.0f, 1.0f, 0.0f));
+			mauriceModel = glm::rotate(mauriceModel, glm::radians(-myCamera.pitch), glm::vec3(1.0f, 0.0f, 0.0f));
+		}
+		glUniformMatrix4fv(glGetUniformLocation(shader.shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(mauriceModel));
+
+		// do not send the normal matrix if we are rendering in the depth map
+		if (!depthPass) {
+			normalMatrix = glm::mat3(glm::inverseTranspose(view * model));
+			glUniformMatrix3fv(glGetUniformLocation(shader.shaderProgram, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(normalMatrix));
+		}
+
+		maurice.Draw(shader);
+
+		model = glm::rotate(glm::mat4(1.0f), glm::radians(planeRotation), glm::vec3(0.0f, 1.0f, 0.0f));
+		model = glm::translate(model, glm::vec3(-78.3925f, 21.1351f, 3.2545f));
+		model = glm::rotate(model, glm::radians(sawAngle), glm::vec3(0.0f, 0.0f, 1.0f));
+		model = glm::translate(model, glm::vec3(78.3925f, -21.1351f, -3.2545f));
+
+		glUniformMatrix4fv(glGetUniformLocation(shader.shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
+
+		if (!depthPass) {
+			normalMatrix = glm::mat3(glm::inverseTranspose(view * model));
+			glUniformMatrix3fv(glGetUniformLocation(shader.shaderProgram, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(normalMatrix));
+		}
+
+		airplaneSaw.Draw(shader);
+
+		model = glm::rotate(glm::mat4(1.0f), glm::radians(planeRotation), glm::vec3(0.0f, 1.0f, 0.0f));
+		glUniformMatrix4fv(glGetUniformLocation(shader.shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
+
+		if (!depthPass) {
+			normalMatrix = glm::mat3(glm::inverseTranspose(view * model));
+			glUniformMatrix3fv(glGetUniformLocation(shader.shaderProgram, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(normalMatrix));
+		}
+		airplaneBody.Draw(shader);
+
+		sceneModel2 = glm::rotate(glm::mat4(1.0f), glm::radians(sceneRotationAngle2), glm::vec3(0.0f, 1.0f, 0.0f));
+		glm::vec3 lightPointPos1Aux = glm::mat3(sceneModel2) * lightPointPos1;
+		model = sceneModel;
+		glUniform3fv(glGetUniformLocation(shader.shaderProgram, "lightPointPosEye1"), 1, glm::value_ptr(lightPointPos1Aux));
+		glUniformMatrix4fv(glGetUniformLocation(shader.shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(sceneModel2));
+
+		if (!depthPass) {
+			normalMatrix = glm::mat3(glm::inverseTranspose(view * model));
+			glUniformMatrix3fv(glGetUniformLocation(shader.shaderProgram, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(normalMatrix));
+		}
+
+		scene2.Draw(shader);
+
+		sceneModel3 = glm::rotate(glm::mat4(1.0f), glm::radians(sceneRotationAngle3), glm::vec3(0.0f, 1.0f, 0.0f));
+		glm::vec3 lightPointPos2Aux = glm::mat3(sceneModel3) * lightPointPos2;
+		model = sceneModel;
+		glUniform3fv(glGetUniformLocation(shader.shaderProgram, "lightPointPosEye2"), 1, glm::value_ptr(lightPointPos2Aux));
+		glUniformMatrix4fv(glGetUniformLocation(shader.shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(sceneModel3));
+
+		if (!depthPass) {
+			normalMatrix = glm::mat3(glm::inverseTranspose(view * model));
+			glUniformMatrix3fv(glGetUniformLocation(shader.shaderProgram, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(normalMatrix));
+		}
+
+		scene3.Draw(shader);
+
+		sceneModel4 = glm::rotate(glm::mat4(1.0f), glm::radians(sceneRotationAngle4), glm::vec3(0.0f, 1.0f, 0.0f));
+		glm::vec3 lightPointPos3Aux = glm::mat3(sceneModel4) * lightPointPos3;
+		model = sceneModel4;
+		glUniform3fv(glGetUniformLocation(shader.shaderProgram, "lightPointPosEye3"), 1, glm::value_ptr(lightPointPos3Aux));
+		glUniformMatrix4fv(glGetUniformLocation(shader.shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(sceneModel4));
+
+		scene4.Draw(shader);
+
+		if (projectileSpawned)
+		{
+			glUniform1i(glGetUniformLocation(shader.shaderProgram, "projectileSpawned"), projectileSpawned);
+			glUniform3fv(glGetUniformLocation(shader.shaderProgram, "lightPointPosEye4"), 1, glm::value_ptr(projectilePos));
+			model = glm::translate(glm::mat4(1.0f), projectilePos);
+			glUniformMatrix4fv(glGetUniformLocation(shader.shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
+
+			if (!depthPass) {
+				normalMatrix = glm::mat3(glm::inverseTranspose(view * model));
+				glUniformMatrix3fv(glGetUniformLocation(shader.shaderProgram, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(normalMatrix));
+			}
+
+			fireball.Draw(shader);
+		}
+		else
+		{
+			glUniform1i(glGetUniformLocation(shader.shaderProgram, "projectileSpawned"), 0);
+		}
 	}
 
-	maurice.Draw(shader);
+	glCheckError();
+}
+
+void processProjectileMovement()
+{
+	if (projectileSpawned)
+	{
+		if (shootForPlane) 
+		{
+			model = glm::rotate(glm::mat4(1.0f), glm::radians(planeRotation), glm::vec3(0.0f, 1.0f, 0.0f));
+			glm::vec3 planePosition = glm::mat3(model) * glm::vec3(-78.3925f, 21.1351f, 3.2545f);
+
+			sceneModel4 = glm::rotate(glm::mat4(1.0f), glm::radians(sceneRotationAngle4), glm::vec3(0.0f, 1.0f, 0.0f));
+
+			projectileDir = glm::normalize(glm::vec3(planePosition - projectilePos));
+			projectilePos += projectileDir * projectileSpeed;
+
+			float currentLength = glm::length(projectilePos - planePosition);
+			if (currentLength > lastDistance)
+			{
+				projectileSpawned = false;
+				shootForPlane = false;
+			}
+			lastDistance = currentLength;
+
+		}
+		else
+		{
+			projectilePos += projectileDir * projectileSpeed;
+			float currentLength = glm::length(projectilePos - glm::vec3(-1.12162f, 9.36581f, -0.770288f));
+			if (currentLength > lastDistance)
+			{
+				projectileSpawned = false;
+			}
+			lastDistance = currentLength;
+		}
+	}
 }
 
 void renderScene() {
-
 	// depth maps creation pass
 	//TODO - Send the light-space transformation matrix to the depth map creation shader and
 	//		 render the scene in the depth map
@@ -498,17 +805,16 @@ void renderScene() {
 
 		glClear(GL_COLOR_BUFFER_BIT);
 
+		myCustomShader.useShaderProgram();
+		lightRotation = glm::rotate(glm::mat4(1.0f), glm::radians(lightAngle), glm::vec3(0.0f, 1.0f, 0.0f));
+		glUniform3fv(lightDirLoc, 1, glm::value_ptr(glm::inverseTranspose(glm::mat3(view * lightRotation)) * lightDir));
+
 		screenQuadShader.useShaderProgram();
 
 		//bind the depth map
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, depthMapTexture);
 		glUniform1i(glGetUniformLocation(screenQuadShader.shaderProgram, "depthMap"), 0);
-
-		lightRotation = glm::rotate(glm::mat4(1.0f), glm::radians(lightAngle), glm::vec3(0.0f, 1.0f, 0.0f));
-		glUniform3fv(lightDirLoc, 1, glm::value_ptr(glm::inverseTranspose(glm::mat3(view * lightRotation)) * lightDir));
-
-
 		glDisable(GL_DEPTH_TEST);
 		screenQuad.Draw(screenQuadShader);
 		glEnable(GL_DEPTH_TEST);
@@ -525,7 +831,7 @@ void renderScene() {
 
 		view = myCamera.getViewMatrix();
 		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-				
+
 		lightRotation = glm::rotate(glm::mat4(1.0f), glm::radians(lightAngle), glm::vec3(0.0f, 1.0f, 0.0f));
 		glUniform3fv(lightDirLoc, 1, glm::value_ptr(glm::inverseTranspose(glm::mat3(view * lightRotation)) * lightDir));
 
@@ -542,20 +848,8 @@ void renderScene() {
 
 		drawObjects(myCustomShader, false);
 
-		//draw a white cube around the light
-
-		lightShader.useShaderProgram();
-
-
-		model = glm::mat4(1.0f);
-		glUniformMatrix4fv(glGetUniformLocation(lightShader.shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
-
-		lightCube.Draw(lightShader);
-
-		glUniformMatrix4fv(glGetUniformLocation(lightShader.shaderProgram, "view"), 1, GL_FALSE, glm::value_ptr(view));
 		mySkyBox.Draw(skyboxShader, view, projection);
 	}
-
 }
 
 void cleanup() {
@@ -581,11 +875,11 @@ int main(int argc, const char * argv[]) {
 	initFBO();
 	initSkybox();
 
-	glCheckError();
 
 	while (!glfwWindowShouldClose(glWindow)) {
 		processSceneMovement();
 		processMovement();
+		processProjectileMovement();
 
 		renderScene();
 

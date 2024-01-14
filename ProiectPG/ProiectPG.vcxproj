@@ -46,6 +46,8 @@
     <None Include="shaders\screenQuad.vert" />
     <None Include="shaders\shaderStart.frag" />
     <None Include="shaders\shaderStart.vert" />
+    <None Include="shaders\shaderStartLightPoint.frag" />
+    <None Include="shaders\shaderStartLightPoint.vert" />
     <None Include="shaders\shaderStartReflect.frag" />
     <None Include="shaders\shaderStartReflect.vert" />
     <None Include="shaders\skyboxShader.frag" />

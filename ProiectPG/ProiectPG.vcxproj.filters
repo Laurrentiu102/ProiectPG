@@ -103,5 +103,11 @@
     <None Include="shaders\skyboxShader.vert">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="shaders\shaderStartLightPoint.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\shaderStartLightPoint.vert">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>
