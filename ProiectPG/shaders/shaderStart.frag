@@ -138,7 +138,7 @@ void main()
 	else
 	{
 		colorPoint1 = computeLightComponentsPoint(lightPointPosEye1, constant, 0.35f, 0.44f, lightPointColor1);
-		colorPoint2 = computeLightComponentsPoint(lightPointPosEye2, constant, 0.22f, 0.20f, lightPointColor2);
+		colorPoint2 = computeLightComponentsPoint(lightPointPosEye2, constant, 0.09f, 0.032f, lightPointColor2);
 		colorPoint3 = computeLightComponentsPoint(lightPointPosEye3, constant, 0.045f, 0.0075f, lightPointColor3);
 	}
 

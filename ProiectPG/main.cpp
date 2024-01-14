@@ -20,6 +20,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/matrix_inverse.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/vector_angle.hpp>
 
 #include "Shader.hpp"
 #include "Model3D.hpp"
@@ -76,6 +77,9 @@ gps::Camera myCamera(
 				glm::vec3(0.0f, 0.0f, 0.0f),
 				glm::vec3(0.0f, 1.0f, 0.0f));
 float cameraSpeed = 0.01f;
+bool recordCamera = false;
+bool replayCamera = false;
+FILE* cameraHistory;
 
 bool pressedKeys[1024];
 GLfloat lightAngle;
@@ -89,6 +93,8 @@ gps::Model3D airplaneBody;
 gps::Model3D airplaneSaw;
 float sawAngle = 0;
 float planeRotation = 0;
+glm::vec3 originalPlanePosition = glm::vec3(-78.3925f, 21.1351f, 3.2545f);
+glm::vec3 shootPlanePosition = glm::vec3(-78.1147f, 21.1624f, 0.74556f);
 
 gps::Model3D scene;
 glm::mat4 sceneModel;
@@ -110,8 +116,11 @@ gps::Model3D fireball;
 glm::vec3 projectileDir;
 glm::vec3 projectilePos;
 float projectileSpeed = 0.25f;
+glm::vec3 projectileTargetPosition;
 bool projectileSpawned = false;
+bool projectileSpawnedForCamera = false;
 bool shootForPlane = false;
+bool shootForPlaneForCamera = false;
 float lastDistance = 0.0f;
 
 bool stopSceneRotation = true;
@@ -130,7 +139,8 @@ gps::Shader skyboxShader;
 GLuint shadowMapFBO;
 GLuint depthMapTexture;
 
-gps::SkyBox mySkyBox;
+gps::SkyBox mySkyBoxDay;
+gps::SkyBox mySkyBoxNight;
 
 bool showDepthMap;
 
@@ -178,6 +188,59 @@ void windowResizeCallback(GLFWwindow* window, int width, int height) {
 	glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
 }
 
+void initSkybox()
+{
+	std::vector<const GLchar*> faces;
+	faces.push_back("skyboxDay/right.tga");
+	faces.push_back("skyboxDay/left.tga");
+	faces.push_back("skyboxDay/top.tga");
+	faces.push_back("skyboxDay/bottom.tga");
+	faces.push_back("skyboxDay/back.tga");
+	faces.push_back("skyboxDay/front.tga");
+	mySkyBoxDay.Load(faces);
+
+	faces.clear();
+	faces.push_back("skyboxNight/right.tga");
+	faces.push_back("skyboxNight/left.tga");
+	faces.push_back("skyboxNight/top.tga");
+	faces.push_back("skyboxNight/bottom.tga");
+	faces.push_back("skyboxNight/back.tga");
+	faces.push_back("skyboxNight/front.tga");
+	mySkyBoxNight.Load(faces);
+}
+
+void shootPenguins()
+{
+	if (!projectileSpawned)
+	{
+		sceneModel4 = glm::rotate(glm::mat4(1.0f), glm::radians(sceneRotationAngle4), glm::vec3(0.0f, 1.0f, 0.0f));
+		projectilePos = glm::mat3(sceneModel4) * lightPointPos3;
+
+		projectileTargetPosition = glm::vec3(-1.12162f, 9.36581f, -0.770288f);
+		projectileDir = glm::normalize(projectileTargetPosition - projectilePos);
+		lastDistance = glm::length(projectileTargetPosition - projectilePos);
+		projectileSpawned = true;
+	}
+}
+
+void shootPlane()
+{
+	if (!projectileSpawned)
+	{
+		model = glm::rotate(glm::mat4(1.0f), glm::radians(planeRotation), glm::vec3(0.0f, 1.0f, 0.0f));
+		glm::vec3 planePosition = glm::mat3(model) * shootPlanePosition;
+
+		projectileTargetPosition = planePosition;
+		sceneModel4 = glm::rotate(glm::mat4(1.0f), glm::radians(sceneRotationAngle4), glm::vec3(0.0f, 1.0f, 0.0f));
+		projectilePos = glm::mat3(sceneModel4) * lightPointPos3;
+
+		projectileDir = glm::normalize(glm::vec3(projectileTargetPosition - projectilePos));
+		lastDistance = glm::length(projectileTargetPosition - projectilePos);
+		shootForPlane = true;
+		projectileSpawned = true;
+	}
+}
+
 void keyboardCallback(GLFWwindow* window, int key, int scancode, int action, int mode) {
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, GL_TRUE);
@@ -197,33 +260,38 @@ void keyboardCallback(GLFWwindow* window, int key, int scancode, int action, int
 		lightMode = !lightMode;
 		myCustomShader.useShaderProgram();
 		glUniform1i(lightModeLoc, lightMode ? 1 : 0);
+
 	}
 	
 	if (key == GLFW_KEY_4 && action == GLFW_PRESS) {
-		if (!projectileSpawned)
-		{
-			sceneModel4 = glm::rotate(glm::mat4(1.0f), glm::radians(sceneRotationAngle4), glm::vec3(0.0f, 1.0f, 0.0f));
-			projectilePos = glm::mat3(sceneModel4) * lightPointPos3;
-
-			projectileDir = glm::normalize(glm::vec3(-1.12162f, 9.36581f, -0.770288f) - projectilePos);
-			lastDistance = glm::length(glm::vec3(-1.12162f, 9.36581f, -0.770288f) - projectilePos);
-			projectileSpawned = true;
-		}
+		shootPenguins();
 	}
 
 	if (key == GLFW_KEY_5 && action == GLFW_PRESS) {
-		if (!projectileSpawned)
+		shootPlane();
+	}
+
+	if (key == GLFW_KEY_6 && action == GLFW_PRESS) {
+		recordCamera = !recordCamera;
+		if (recordCamera)
 		{
-			model = glm::rotate(glm::mat4(1.0f), glm::radians(planeRotation), glm::vec3(0.0f, 1.0f, 0.0f));
-			glm::vec3 planePosition = glm::mat3(model) * glm::vec3(-78.3925f, 21.1351f, 3.2545f);
+			fopen_s(&cameraHistory, "cameraMovement.txt", "w");
+		}
+		else
+		{
+			fclose(cameraHistory);
+		}
+	}
 
-			sceneModel4 = glm::rotate(glm::mat4(1.0f), glm::radians(sceneRotationAngle4), glm::vec3(0.0f, 1.0f, 0.0f));
-			projectilePos = glm::mat3(sceneModel4) * lightPointPos3;
-
-			projectileDir = glm::normalize(glm::vec3(planePosition - projectilePos));
-			lastDistance = glm::length(planePosition - projectilePos);
-			shootForPlane = true;
-			projectileSpawned = true;
+	if (key == GLFW_KEY_7 && action == GLFW_PRESS) {
+		if (!recordCamera)
+			replayCamera = !replayCamera;
+		if (replayCamera)
+			fopen_s(&cameraHistory, "cameraMovement.txt", "r");
+		else
+		{
+			fclose(cameraHistory);
+			myCamera.rotate(myCamera.pitch, myCamera.yaw);
 		}
 	}
 
@@ -246,6 +314,14 @@ void keyboardCallback(GLFWwindow* window, int key, int scancode, int action, int
 		}
 	}
 
+	if (key == GLFW_KEY_EQUAL && action == GLFW_PRESS) {
+		myCamera.speed += 0.03f;
+	}
+
+	if (key == GLFW_KEY_MINUS && action == GLFW_PRESS) {
+		myCamera.speed -= 0.03f;
+	}
+
 	if (key >= 0 && key < 1024)
 	{
 		if (action == GLFW_PRESS)
@@ -256,7 +332,10 @@ void keyboardCallback(GLFWwindow* window, int key, int scancode, int action, int
 }
 
 void mouseCallback(GLFWwindow* window, double xpos, double ypos) {
-	myCamera.mouseCallback(xpos, ypos);
+	if (!replayCamera)
+	{
+		myCamera.mouseCallback(xpos, ypos);
+	}
 }
 
 void processSceneMovement()
@@ -287,41 +366,32 @@ void processMovement()
 		lightAngle += 1.0f;
 	}
 
-	if (pressedKeys[GLFW_KEY_W]) {
-		myCamera.move(gps::MOVE_FORWARD);		
-	}
+	if (!replayCamera)
+	{
+		if (pressedKeys[GLFW_KEY_W]) {
+			myCamera.move(gps::MOVE_FORWARD);
+		}
 
-	if (pressedKeys[GLFW_KEY_S]) {
-		myCamera.move(gps::MOVE_BACKWARD);		
-	}
+		if (pressedKeys[GLFW_KEY_S]) {
+			myCamera.move(gps::MOVE_BACKWARD);
+		}
 
-	if (pressedKeys[GLFW_KEY_A]) {
-		myCamera.move(gps::MOVE_LEFT);		
-	}
+		if (pressedKeys[GLFW_KEY_A]) {
+			myCamera.move(gps::MOVE_LEFT);
+		}
 
-	if (pressedKeys[GLFW_KEY_D]) {
-		myCamera.move(gps::MOVE_RIGHT);		
-	}
+		if (pressedKeys[GLFW_KEY_D]) {
+			myCamera.move(gps::MOVE_RIGHT);
+		}
 
-	if (pressedKeys[GLFW_KEY_LEFT_CONTROL]) {
-		myCamera.move(gps::MOVE_DOWN);
-	}
+		if (pressedKeys[GLFW_KEY_LEFT_CONTROL]) {
+			myCamera.move(gps::MOVE_DOWN);
+		}
 
-	if (pressedKeys[GLFW_KEY_SPACE]) {
-		myCamera.move(gps::MOVE_UP);
+		if (pressedKeys[GLFW_KEY_SPACE]) {
+			myCamera.move(gps::MOVE_UP);
+		}
 	}
-}
-
-void initSkybox()
-{
-	std::vector<const GLchar*> faces;
-	faces.push_back("skybox/right.tga");
-	faces.push_back("skybox/left.tga");
-	faces.push_back("skybox/top.tga");
-	faces.push_back("skybox/bottom.tga");
-	faces.push_back("skybox/back.tga");
-	faces.push_back("skybox/front.tga");
-	mySkyBox.Load(faces);
 }
 
 bool initOpenGLWindow()
@@ -445,7 +515,7 @@ void initUniforms() {
 	lightPointPos2Loc = glGetUniformLocation(myCustomShader.shaderProgram, "lightPointPosEye2");
 	glUniform3fv(lightPointPos2Loc, 1, glm::value_ptr(lightPointPos2));
 
-	lightPointColor2 = glm::vec3(0.3f, 0.6f, 0.8f);
+	lightPointColor2 = glm::vec3(0.22f, 0.04f, 0.8f);
 	lightPointColor2Loc = glGetUniformLocation(myCustomShader.shaderProgram, "lightPointColor2");
 	glUniform3fv(lightPointColor2Loc, 1, glm::value_ptr(lightPointColor2));
 
@@ -560,9 +630,9 @@ void drawObjects(gps::Shader shader, bool depthPass) {
 		maurice.Draw(shader);
 
 		model = glm::rotate(glm::mat4(1.0f), glm::radians(planeRotation), glm::vec3(0.0f, 1.0f, 0.0f));
-		model = glm::translate(model, glm::vec3(-78.3925f, 21.1351f, 3.2545f));
+		model = glm::translate(model, originalPlanePosition);
 		model = glm::rotate(model, glm::radians(sawAngle), glm::vec3(0.0f, 0.0f, 1.0f));
-		model = glm::translate(model, glm::vec3(78.3925f, -21.1351f, -3.2545f));
+		model = glm::translate(model, -originalPlanePosition);
 
 		glUniformMatrix4fv(glGetUniformLocation(shader.shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
 
@@ -664,7 +734,7 @@ void drawObjects(gps::Shader shader, bool depthPass) {
 		maurice.Draw(shader);
 
 		model = glm::rotate(glm::mat4(1.0f), glm::radians(planeRotation), glm::vec3(0.0f, 1.0f, 0.0f));
-		model = glm::translate(model, glm::vec3(-78.3925f, 21.1351f, 3.2545f));
+		model = glm::translate(model, originalPlanePosition);
 		model = glm::rotate(model, glm::radians(sawAngle), glm::vec3(0.0f, 0.0f, 1.0f));
 		model = glm::translate(model, glm::vec3(78.3925f, -21.1351f, -3.2545f));
 
@@ -745,37 +815,27 @@ void drawObjects(gps::Shader shader, bool depthPass) {
 
 void processProjectileMovement()
 {
-	if (projectileSpawned)
+
+	if (shootForPlane)
 	{
-		if (shootForPlane) 
-		{
-			model = glm::rotate(glm::mat4(1.0f), glm::radians(planeRotation), glm::vec3(0.0f, 1.0f, 0.0f));
-			glm::vec3 planePosition = glm::mat3(model) * glm::vec3(-78.3925f, 21.1351f, 3.2545f);
+		model = glm::rotate(glm::mat4(1.0f), glm::radians(planeRotation), glm::vec3(0.0f, 1.0f, 0.0f));
+		glm::vec3 planePosition = glm::mat3(model) * shootPlanePosition;
+		projectileTargetPosition = planePosition;
+	}
 
-			sceneModel4 = glm::rotate(glm::mat4(1.0f), glm::radians(sceneRotationAngle4), glm::vec3(0.0f, 1.0f, 0.0f));
+	if (projectileSpawned)
+	{		sceneModel4 = glm::rotate(glm::mat4(1.0f), glm::radians(sceneRotationAngle4), glm::vec3(0.0f, 1.0f, 0.0f));
 
-			projectileDir = glm::normalize(glm::vec3(planePosition - projectilePos));
+			projectileDir = glm::normalize(glm::vec3(projectileTargetPosition - projectilePos));
 			projectilePos += projectileDir * projectileSpeed;
 
-			float currentLength = glm::length(projectilePos - planePosition);
+			float currentLength = glm::length(projectilePos - projectileTargetPosition);
 			if (currentLength > lastDistance)
 			{
 				projectileSpawned = false;
 				shootForPlane = false;
 			}
 			lastDistance = currentLength;
-
-		}
-		else
-		{
-			projectilePos += projectileDir * projectileSpeed;
-			float currentLength = glm::length(projectilePos - glm::vec3(-1.12162f, 9.36581f, -0.770288f));
-			if (currentLength > lastDistance)
-			{
-				projectileSpawned = false;
-			}
-			lastDistance = currentLength;
-		}
 	}
 }
 
@@ -848,7 +908,7 @@ void renderScene() {
 
 		drawObjects(myCustomShader, false);
 
-		mySkyBox.Draw(skyboxShader, view, projection);
+		lightMode ? mySkyBoxDay.Draw(skyboxShader, view, projection) : mySkyBoxNight.Draw(skyboxShader, view, projection);
 	}
 }
 
@@ -859,6 +919,61 @@ void cleanup() {
 	glfwDestroyWindow(glWindow);
 	//close GL context and any other GLFW resources
 	glfwTerminate();
+}
+
+void recordCameraMovement()
+{
+	if (!recordCamera)
+		return;
+
+	fprintf(cameraHistory, "%f %f %f ", myCamera.cameraPosition.x, myCamera.cameraPosition.y, myCamera.cameraPosition.z);
+	fprintf(cameraHistory, "%f %f %f ", myCamera.cameraTarget.x, myCamera.cameraTarget.y, myCamera.cameraTarget.z);
+	fprintf(cameraHistory, "%f %f %f ", myCamera.cameraUpDirection.x, myCamera.cameraUpDirection.y, myCamera.cameraUpDirection.z);
+	fprintf(cameraHistory, "%f %f ", myCamera.yaw, myCamera.pitch);
+	fprintf(cameraHistory, "%d %d %d\n", lightMode, projectileSpawned, shootForPlane);
+}
+
+void replayCameraMovement()
+{
+	if (!replayCamera)
+		return;
+
+	glm::vec3 cameraPosition, cameraTarget, cameraUpDirection;
+	float yaw, pitch;
+	bool lightModeAux, projectileSpawnedAux, shootForPlaneAux;
+	if (fscanf_s(cameraHistory, "%f %f %f ", &cameraPosition.x, &cameraPosition.y, &cameraPosition.z) == 3 &&
+		fscanf_s(cameraHistory, "%f %f %f ", &cameraTarget.x, &cameraTarget.y, &cameraTarget.z) == 3 &&
+		fscanf_s(cameraHistory, "%f %f %f", &cameraUpDirection.x, &cameraUpDirection.y, &cameraUpDirection.z) == 3 &&
+		fscanf_s(cameraHistory, "%f %f", &yaw, &pitch) == 2 &&
+		fscanf_s(cameraHistory, "%d %d %d", &lightModeAux, &projectileSpawnedAux, &shootForPlaneAux) == 3)
+	{
+		myCamera.cameraPosition = cameraPosition;
+		myCamera.cameraTarget = cameraTarget;
+		myCamera.cameraUpDirection = cameraUpDirection;
+
+		myCamera.yaw = yaw;
+		myCamera.pitch = pitch;
+
+		myCamera.cameraFrontDirection = glm::normalize(glm::vec3(myCamera.cameraTarget - myCamera.cameraPosition));
+
+		myCustomShader.useShaderProgram();
+		glUniform1i(lightModeLoc, lightMode ? 1 : 0);
+		lightMode = lightModeAux;
+
+		if (projectileSpawned == false && projectileSpawnedAux == true)
+		{
+			if (!shootForPlaneAux)
+				shootPenguins();
+			else
+				shootPlane();
+		}
+	}
+
+	if (feof(cameraHistory)) {
+		replayCamera = false;
+		fclose(cameraHistory);
+	}
+
 }
 
 int main(int argc, const char * argv[]) {
@@ -879,6 +994,11 @@ int main(int argc, const char * argv[]) {
 	while (!glfwWindowShouldClose(glWindow)) {
 		processSceneMovement();
 		processMovement();
+
+		recordCameraMovement();
+
+		replayCameraMovement();
+
 		processProjectileMovement();
 
 		renderScene();
