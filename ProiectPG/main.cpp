@@ -466,7 +466,7 @@ bool initOpenGLWindow()
     //for antialising
     glfwWindowHint(GLFW_SAMPLES, 4);
 
-	glWindow = glfwCreateWindow(glWindowWidth, glWindowHeight, "OpenGL Shader Example", NULL, NULL);
+	glWindow = glfwCreateWindow(glWindowWidth, glWindowHeight, "Island", NULL, NULL);
 	if (!glWindow) {
 		fprintf(stderr, "ERROR: could not open window with GLFW3\n");
 		glfwTerminate();
