@@ -1,0 +1,99 @@
+# Blender 4.0.2 MTL File: 'scene.blend'
+# www.blender.org
+
+newmtl Cegła_dwa
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd medieval_blocks_03_diff_2k.jpg
+map_Ns medieval_blocks_03_rough_2k.jpg
+map_Bump -bm 1.000000 medieval_blocks_03_nor_gl_2k.exr
+
+newmtl Dach.001
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd roof_slates_03_diff_2k.jpg
+map_Ns roof_slates_03_rough_2k.jpg
+map_Bump -bm 1.000000 roof_slates_03_nor_gl_2k.exr
+
+newmtl Drewno_Pewne
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd weathered_brown_planks_diff_2k.jpg
+map_Ns weathered_brown_planks_rough_2k.jpg
+map_Bump -bm 1.000000 weathered_brown_planks_nor_gl_2k.exr
+
+newmtl Kamień_1
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd rock_pitted_mossy_diff_2k.jpg
+map_Ns rock_pitted_mossy_rough_2k.exr
+map_Bump -bm 1.000000 rock_pitted_mossy_nor_gl_2k.exr
+
+newmtl Kamień_2
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd broken_wall_diff_2k.jpg
+map_Ns broken_wall_rough_2k.jpg
+map_Bump -bm 1.000000 broken_wall_nor_gl_2k.exr
+
+newmtl Kamień_3
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd coral_fort_wall_03_diff_2k.jpg
+map_Ns coral_fort_wall_03_rough_2k.exr
+map_Bump -bm 1.000000 coral_fort_wall_03_nor_gl_2k.exr
+
+newmtl Metal
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd green_metal_rust_diff_2k.jpg
+map_Ns green_metal_rust_rough_2k.jpg
+map_Bump -bm 1.000000 green_metal_rust_nor_gl_2k.exr
+
+newmtl Szkło
+Ns 360.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+
+newmtl Tree_Branch
+Ns 360.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2

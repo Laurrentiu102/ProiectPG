@@ -22,11 +22,13 @@ uniform	vec3 lightPointPosEye4;
 uniform	vec3 lightPointColor4;
 uniform bool projectileSpawned;
 
+uniform	vec3 lightPointPosEye5;
+uniform	vec3 lightPointColor5;
 
 uniform	vec3 lightDir;
 uniform	vec3 lightColor;
 uniform bool lightMode;
-uniform vec3 viewPos;
+uniform bool fogOn;
 
 //texture
 uniform sampler2D diffuseTexture;
@@ -42,6 +44,16 @@ float specularStrength = 0.5f;
 float shininess = 32.0f;
 
 float constant = 1.0f;
+
+float computeFog()
+{
+	float fogDensity = 0.0045f;
+	float fragmentDistance = length(fPosEye);
+	float fogFactor = exp(-pow(fragmentDistance * fogDensity, 2));
+
+	return clamp(fogFactor, 0.0f, 1.0f);
+}
+
 
 float computeShadow()
 {
@@ -115,7 +127,7 @@ vec3 computeLightComponentsPoint(vec3 lightPointPos, float constant, float linea
 
 	ambientPoint *= texture(diffuseTexture, fTexCoords).rgb;
 	diffusePoint *= texture(diffuseTexture, fTexCoords).rgb;
-	specularPoint *= texture(specularTexture, fTexCoords).rgb;
+	specularPoint *= texture(specularTexture, fTexCoords).rgb * 2.2f;
 
 	return ambientPoint + diffusePoint + specularPoint;
 }
@@ -126,25 +138,32 @@ void main()
 	if(colorFromTexture.a < 0.1)
 		discard;
 	
+	float fogFactor;
+	vec4 fogColor;
+
 	vec3 colorPoint1;
 	vec3 colorPoint2;
 	vec3 colorPoint3;
-	vec3 colorPoint4 = projectileSpawned ? computeLightComponentsPoint(lightPointPosEye4, constant, 0.09f, 0.032f, lightPointColor4) : vec3(0.0f, 0.0f, 0.0f);;
+	vec3 colorPoint4 = projectileSpawned ? computeLightComponentsPoint(lightPointPosEye4, constant, 0.09f, 0.032f, lightPointColor4) : vec3(0.0f, 0.0f, 0.0f);
+	vec3 colorPoint5;
 
 	if(lightMode)
 	{
 		computeLightComponentsDir();
+		fogFactor = computeFog();
+		fogColor = vec4(0.85f, 0.99f, 0.92f, 1.0f);
 	}
 	else
 	{
 		colorPoint1 = computeLightComponentsPoint(lightPointPosEye1, constant, 0.35f, 0.44f, lightPointColor1);
 		colorPoint2 = computeLightComponentsPoint(lightPointPosEye2, constant, 0.09f, 0.032f, lightPointColor2);
-		colorPoint3 = computeLightComponentsPoint(lightPointPosEye3, constant, 0.045f, 0.0075f, lightPointColor3);
+		colorPoint3 = computeLightComponentsPoint(lightPointPosEye3, constant, 0.14f, 0.07f, lightPointColor3);
+		colorPoint5 = computeLightComponentsPoint(lightPointPosEye5, constant, 0.14f, 0.07f, lightPointColor5);
 	}
 
 	float shadow = lightMode ? computeShadow() : 0.0f;
 	vec3 color = min((ambient + (1.0f - shadow)*diffuse) + (1.0f - shadow)*specular, 1.0f);
-	vec3 finalColor = min(color + colorPoint1 + colorPoint2 + colorPoint3 + colorPoint4, 1.0f);
+	vec3 finalColor = min(color + colorPoint1 + colorPoint2 + colorPoint3 + colorPoint4 + colorPoint5, 1.0f);
 
-    fColor = vec4(finalColor, 1.0f);
+	fColor = (fogOn && lightMode) ? fogColor * (1 - fogFactor) + vec4(finalColor, 1.0f) * fogColor : vec4(finalColor, 1.0f) ;
 }
